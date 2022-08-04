@@ -91,3 +91,19 @@ func (s *Server) Exec(ci *CallInfo) {
 		logger.Error("%v", err)
 	}
 }
+
+func (s *Server) Go(id interface{}, args ...interface{}) {
+	f := s.router[id]
+	if f == nil {
+		return
+	}
+
+	defer func() {
+		recover()
+	}()
+
+	s.ChanCall <- &CallInfo{
+		f:    f,
+		args: args,
+	}
+}

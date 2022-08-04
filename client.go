@@ -9,14 +9,12 @@ import (
 
 type Client struct {
 	s                *Server
-	chanSyncRet      chan *RetInfo
 	ChanAsyncRet     chan *RetInfo
 	pendingAsyncCall int
 }
 
 func NewClient(l int) *Client {
 	c := new(Client)
-	c.chanSyncRet = make(chan *RetInfo, 1)
 	c.ChanAsyncRet = make(chan *RetInfo, l)
 	return c
 }
@@ -93,25 +91,6 @@ func (c *Client) asyncCall(id interface{}, args []interface{}, cb interface{}, n
 	}
 }
 
-func (c *Client) Call(id interface{}, args ...interface{}) {
-	f, err := c.f(id, 0)
-	if err != nil {
-		logger.Error("chan rpc callback function not found! id:%v", id)
-		return
-	}
-
-	err = c.call(&CallInfo{
-		f:       f,
-		args:    args,
-		chanRet: c.ChanAsyncRet,
-		cb:      nil,
-	}, false)
-	if err != nil {
-		logger.Error("chan rpc callback function error! id:%v, err:%v", id, err)
-		return
-	}
-}
-
 func (c *Client) AsyncCall(id interface{}, _args ...interface{}) {
 	if len(_args) < 1 {
 		logger.Error("callback function not found")
@@ -152,6 +131,7 @@ func assert(i interface{}) []interface{} {
 		return i.([]interface{})
 	}
 }
+
 func execCb(ri *RetInfo) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -174,6 +154,7 @@ func execCb(ri *RetInfo) {
 	}
 	return
 }
+
 func (c *Client) Cb(ri *RetInfo) {
 	c.pendingAsyncCall--
 	execCb(ri)
