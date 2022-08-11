@@ -1,6 +1,7 @@
 package chanrpc
 
 import (
+	"errors"
 	"fmt"
 	logger "github.com/hezhis/go_log"
 	"runtime"
@@ -105,5 +106,15 @@ func (s *Server) Go(id interface{}, args ...interface{}) {
 	s.ChanCall <- &CallInfo{
 		f:    f,
 		args: args,
+	}
+}
+
+func (s *Server) Close() {
+	close(s.ChanCall)
+
+	for ci := range s.ChanCall {
+		s.ret(ci, &RetInfo{
+			err: errors.New("chanrpc server closed"),
+		})
 	}
 }
